@@ -352,19 +352,25 @@ elements.forEach(element => {
 });
 
 
-function BFS() {
+function BFS(start, goal) {
   let cola = []; 
-  let visitados = new Set();
-
-
-  cola.push(nodes[0].name);
-  visitados.add(nodes[0].name);
-
+  let visitados = new Set(); 
   let resultado = [];
+
+
+  cola.push(start);
+  visitados.add(start);
 
   while (cola.length > 0) {
     let actual = cola.shift();
     resultado.push(actual);
+
+
+    if (actual === goal) {
+      console.log(`BFS: Objetivo ${goal} encontrado`);
+      console.log("Recorrido:", resultado);
+      return resultado;
+    }
 
 
     for (let edge of edges) {
@@ -375,15 +381,16 @@ function BFS() {
     }
   }
 
-  console.log("BFS:", resultado);
+  console.log(`BFS: Objetivo ${goal} no encontrado`);
+  return [];
 }
 
-function DFS() {
-  let visited = new Set(); 
-  let stack = [];
-  let result = []; /
+function DFS(start, goal) {
+  let visited = new Set();
+  let stack = []; 
+  let result = []; 
 
-  stack.push(nodes[0].name); 
+  stack.push(start);
 
   while (stack.length > 0) {
     let current = stack.pop();
@@ -393,38 +400,44 @@ function DFS() {
       result.push(current);
 
 
-      let neighbors = edges
-        .filter(edge => edge.start === current && !visited.has(edge.end)) 
-        .map(edge => edge.end)
-        .sort((a, b) => b - a); 
+      if (current === goal) {
+        console.log(`DFS: Objetivo ${goal} encontrado`);
+        console.log("Recorrido:", result);
+        return result;
+      }
 
+      
+      let neighbors = edges
+        .filter(edge => edge.start === current && !visited.has(edge.end))
+        .map(edge => edge.end)
+        .sort((a, b) => b - a);
 
       for (let neighbor of neighbors) {
         stack.push(neighbor);
       }
-    } 0
+    }
   }
 
-  console.log("DFS Result:", result);
+  console.log(`DFS: Objetivo ${goal} no encontrado`);
+  return [];
 }
 
-function IDS(target) {
+function IDS(start, target) {
   
   function DLS(node, depth, visited) {
-    if (depth === 0) return []; 
+    if (depth === 0) return [];
     if (node === target) return [node]; 
 
-    visited.add(node); 
+    visited.add(node);
 
-    
+
     let neighbors = edges
-      .filter(edge => edge.start === node) 
-      .map(edge => edge.end); 
-
+      .filter(edge => edge.start === node)
+      .map(edge => edge.end);
 
     for (let neighbor of neighbors) {
       if (!visited.has(neighbor)) {
-        let path = DLS(neighbor, depth - 1, visited); 
+        let path = DLS(neighbor, depth - 1, visited);
         if (path.length > 0) {
           return [node, ...path]; 
         }
@@ -434,39 +447,202 @@ function IDS(target) {
     return []; 
   }
 
-
+  // Bucle principal de IDS
   for (let depth = 1; depth <= nodes.length; depth++) {
-    let visited = new Set(); 
-    let startNode = nodes[0].name;
-    let path = DLS(startNode, depth, visited);
+    let visited = new Set(); // Reinicia los nodos visitados para cada nivel
+    let path = DLS(start, depth, visited);
 
     if (path.length > 0) {
-      console.log(`Encontrado: ${target} en profundidad ${depth}`);
-      console.log("Camino:", path);
-      return path; 
+      console.log(`IDS: Objetivo ${target} encontrado en profundidad ${depth}`);
+      return path;
     }
   }
 
-  console.log(`Objetivo ${target} no encontrado`);
+  console.log(`IDS: Objetivo ${target} no encontrado`);
+  return [];
+}
+
+//__________________________________________________________________________________________________________________
+
+function BFS_H(start, goal) {
+ 
+  function heuristic(node, goal) {
+    return Math.abs(node - goal); 
+  }
+
+  let priorityQueue = []; 
+  let visited = new Set();
+  let result = []; 
+
+
+  priorityQueue.push({ name: start, h: heuristic(start, goal) });
+  visited.add(start);
+
+  while (priorityQueue.length > 0) {
+    
+    priorityQueue.sort((a, b) => a.h - b.h); 
+    let current = priorityQueue.shift();
+
+    result.push(current.name);
+
+    if (current.name === goal) {
+      console.log(`Objetivo encontrado: ${goal}`);
+      console.log("Recorrido:", result);
+      return result;
+    }
+
+
+    for (let edge of edges) {
+      if (edge.start === current.name && !visited.has(edge.end)) {
+        visited.add(edge.end);
+        priorityQueue.push({ name: edge.end, h: heuristic(edge.end, goal) });
+      }
+    }
+  }
+
+  console.log(`Objetivo ${goal} no encontrado`);
+  return [];
+}
+
+function IDA_SS(start, target) {
+  
+  function heuristic(node) {
+    return Math.abs(node - target); 
+  }
+
+  
+  function DLS(node, g, fLimit, path) {
+    let f = g + heuristic(node);
+    if (f > fLimit) return f;
+
+    if (node === target) {
+      path.push(node);
+      return true;
+    }
+
+    let minLimit = Infinity;
+    path.push(node);
+
+    for (let edge of edges) {
+      if (edge.start === node && !path.includes(edge.end)) {
+        let result = DLS(edge.end, g + edge.cost, fLimit, path);
+
+        if (result === true) return true;
+        if (typeof result === "number") minLimit = Math.min(minLimit, result);
+      }
+    }
+
+    path.pop(); 
+    return minLimit;
+  }
+
+  let fLimit = heuristic(start);
+  let path = [];
+
+  while (true) {
+    let result = DLS(start, 0, fLimit, path);
+
+    if (result === true) {
+      console.log(`Objetivo encontrado: ${target}`);
+      console.log("Camino:", path);
+      return path;
+    }
+
+    if (result === Infinity) {
+      console.log("No se encontró solución");
+      return [];
+    }
+
+    fLimit = result; // Actualizar el límite
+  }
+}
+
+function ASS(start, target) {
+  function heuristic(node) {
+    return Math.abs(node - target); 
+  }
+
+  let openList = []; 
+  let closedSet = new Set();
+  let gValues = { [start]: 0 };
+  let cameFrom = {}; 
+
+  openList.push({ name: start, f: heuristic(start) });
+
+  while (openList.length > 0) {
+    
+    openList.sort((a, b) => a.f - b.f);
+    let current = openList.shift().name;
+
+    if (current === target) {
+     
+      let path = [];
+      while (current != null) {
+        path.unshift(current);
+        current = cameFrom[current];
+      }
+      console.log("A* Encontrado:", path);
+      return path;
+    }
+
+    closedSet.add(current);
+
+    for (let edge of edges) {
+      if (edge.start === current && !closedSet.has(edge.end)) {
+        let tentativeG = gValues[current] + edge.cost;
+
+        if (!(edge.end in gValues) || tentativeG < gValues[edge.end]) {
+          gValues[edge.end] = tentativeG;
+          let fValue = tentativeG + heuristic(edge.end);
+          openList.push({ name: edge.end, f: fValue });
+          cameFrom[edge.end] = current;
+        }
+      }
+    }
+  }
+
+  console.log("A* no encontró el objetivo");
   return [];
 }
 
 
 
-addNode(445.1999969482422, 121.39999771118164);
-addNode(350.1999969482422, 192.39999771118164);
-addNode(552.1999969482422, 185.39999771118164)
-addNode(269.1999969482422, 276.39999771118164)
-addNode(421.1999969482422, 280.39999771118164)
-addNode(542.1999969482422, 281.39999771118164)
-addNode(637.1999969482422, 281.39999771118164)
 
-edges.push({ start: 1, end: 2, value: 0, color: '#000000' })
-edges.push({ start: 1, end: 3, value: 0, color: '#000000' })
-edges.push({ start: 2, end: 4, value: 0, color: '#000000' })
-edges.push({ start: 2, end: 5, value: 0, color: '#000000' })
-edges.push({ start: 3, end: 6, value: 0, color: '#000000' })
-edges.push({ start: 3, end: 7, value: 0, color: '#000000' })
+
+
+{addNode(500, 100);
+addNode(400, 200);
+addNode(600, 200);
+addNode(300, 300);
+addNode(450, 300);
+addNode(550, 300);
+addNode(700, 300);
+
+addNode(150, 400);
+addNode(250, 400);
+addNode(350, 400);
+addNode(450, 400);
+
+addNode(550, 400);
+addNode(650, 400);
+addNode(750, 400);
+addNode(850, 400);}
+
+{edges.push({ start: 1, end: 2})
+edges.push({ start: 1, end: 3})
+edges.push({ start: 2, end: 4})
+edges.push({ start: 2, end: 5})
+edges.push({ start: 3, end: 6})
+edges.push({ start: 3, end: 7})
+
+edges.push({ start: 4, end: 8})
+edges.push({ start: 4, end: 9})
+edges.push({ start: 5, end: 10})
+edges.push({ start: 5, end: 11})
+edges.push({ start: 6, end: 12})
+edges.push({ start: 6, end: 13})
+edges.push({ start: 7, end: 14})
+edges.push({ start: 7, end: 15})}
 
 drawNodes()
 
