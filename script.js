@@ -353,20 +353,20 @@ elements.forEach(element => {
 
 
 function BFS() {
-  let cola = []; // Cola para BFS
-  let visitados = new Set(); // Registro de nodos visitados
+  let cola = []; 
+  let visitados = new Set();
 
-  // Inicia con el primer nodo
+
   cola.push(nodes[0].name);
   visitados.add(nodes[0].name);
 
   let resultado = [];
 
   while (cola.length > 0) {
-    let actual = cola.shift(); // Saca el primer elemento (FIFO)
+    let actual = cola.shift();
     resultado.push(actual);
 
-    // Encuentra vecinos no visitados
+
     for (let edge of edges) {
       if (edge.start === actual && !visitados.has(edge.end)) {
         cola.push(edge.end);
@@ -379,26 +379,26 @@ function BFS() {
 }
 
 function DFS() {
-  let visited = new Set(); // Para rastrear nodos visitados
+  let visited = new Set(); 
   let stack = [];
-  let result = []; // Resultado del recorrido
+  let result = []; /
 
-  stack.push(nodes[0].name); // Inicia en el primer nodo
+  stack.push(nodes[0].name); 
 
   while (stack.length > 0) {
-    let current = stack.pop(); // Extrae el último elemento de la pila
+    let current = stack.pop();
 
     if (!visited.has(current)) {
-      visited.add(current); // Marca el nodo como visitado
-      result.push(current); // Agrega el nodo al resultado
+      visited.add(current);
+      result.push(current);
 
-      // Encuentra los vecinos no visitados del nodo actual y ordénalos
+
       let neighbors = edges
-        .filter(edge => edge.start === current && !visited.has(edge.end)) // Vecinos no visitados
-        .map(edge => edge.end) // Extrae solo el nodo de destino
-        .sort((a, b) => b - a); // Orden descendente para números
+        .filter(edge => edge.start === current && !visited.has(edge.end)) 
+        .map(edge => edge.end)
+        .sort((a, b) => b - a); 
 
-      // Añade los vecinos a la pila
+
       for (let neighbor of neighbors) {
         stack.push(neighbor);
       }
