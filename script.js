@@ -156,7 +156,7 @@ function addEdge() {//7) agregar aristas
 
 }
 
-function drawEdge(startX, startY, endX, endY, value, color) {//8)dibujar aristas 
+function drawEdge(startX, startY, endX, endY, color) {//8)dibujar aristas 
   const startRadius = 18;
   const endRadius = 18;
 
@@ -197,8 +197,6 @@ function deleteEdge() {//10) borrar una arista en especifico
   drawNodes();
   updateSelects();
 }
-
-
 
 function updateSelects() {//12) actualizacion de los datos de los select
   save = 0;
@@ -284,79 +282,15 @@ canvas.addEventListener('mouseup', function () {//evento que escucha donde se fi
   stopDraggingNode();
 });
 
-//Controoladores de botones
-let listElements = document.querySelectorAll('.list__button--click');
-listElements.forEach(listElement => {
-  listElement.addEventListener('click', () => {
+// Algoritmos __________________________________________________________________________________________________________________
 
-    listElement.classList.toggle('arrow');
+function BFS(start, goal) { // Breadth first search (BFS)
 
-    let height = 0;
+  const startTime = performance.now();
 
-    let menu = listElement.nextElementSibling;
-    if (menu.clientHeight == "0") {
-      height = menu.scrollHeight;
-    }
-
-    menu.style.height = `${height}px`;
-
-
-  })
-})
-
-let elements = document.querySelectorAll('.BFS, .New, .GuardarA, .GuardarImg, .Borrar, .Agregar, .AgregarArista, .CambiarValor, .EliminarArista, .Dijkstra, .Fulkerson, .CambiarF, .CambiarO');
-elements.forEach(element => {
-  element.addEventListener('click', () => {
-
-    const clickedClass = element.classList[2];
-
-
-    switch (clickedClass) {
-      //__________________________________________BOTONES DE ARCHIVOS______________________________________
-
-      case 'BFS': BFS(); break;//boton abrir archivo
-
-      case 'New': newProject(); break;//boton nuevo archivo
-
-      case 'GuardarA': saveProject(); break;//boton guardar archivo
-
-      case 'GuardarImg': saveImg(); break;//boton guardar como imagen
-
-      //__________________________________________BOTONES DE NODOS______________________________________
-
-      case 'Borrar': deleteNode(); break;//boton borrar nodos
-
-      case 'Agregar': alert('Doble clik en el panel para agregar nodo'); break;//boton Agregar nodos
-
-      case 'CambiarF': ChangeNodeFinal(); break;//boton para cambair a nodo final
-
-      case 'CambiarO': ChangeNodeInicial(); break;//boton para cambair a nodo Inicial
-
-      //__________________________________________BOTONES DE ARISTAS______________________________________
-
-      case 'AgregarArista': addEdge(); break;//boton Agregar Arista
-
-      case 'CambiarValor': changeEdgeValue(); break;//boton cambiar valor de aritas
-
-      case 'EliminarArista': deleteEdge(); break;//boton eliminar arista
-
-      //__________________________________________BOTONES DE OPERACIONES______________________________________
-
-      case 'Dijkstra': EjecucionDijkstra(); break;//boton camino mas corto
-
-      case 'Fulkerson': EjecucionFulkerson(); break;//flujo maximo
-
-      default: break;
-    }
-  });
-});
-
-
-function BFS(start, goal) {
-  let cola = []; 
-  let visitados = new Set(); 
+  let cola = [];
+  let visitados = new Set();
   let resultado = [];
-
 
   cola.push(start);
   visitados.add(start);
@@ -365,13 +299,15 @@ function BFS(start, goal) {
     let actual = cola.shift();
     resultado.push(actual);
 
-
     if (actual === goal) {
       console.log(`BFS: Objetivo ${goal} encontrado`);
-      console.log("Recorrido:", resultado);
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+
+      Writing(resultado, "result");
+      Writing(executionTime, "time");
       return resultado;
     }
-
 
     for (let edge of edges) {
       if (edge.start === actual && !visitados.has(edge.end)) {
@@ -382,13 +318,21 @@ function BFS(start, goal) {
   }
 
   console.log(`BFS: Objetivo ${goal} no encontrado`);
+  const endTime = performance.now();
+  const executionTime = endTime - startTime;
+
+  Writing(" ", "NAN");
+  Writing(executionTime, "time");
   return [];
 }
 
-function DFS(start, goal) {
+function DFS(start, goal) { // Depth first search (DFS)
+
+  const startTime = performance.now();
+
   let visited = new Set();
-  let stack = []; 
-  let result = []; 
+  let stack = [];
+  let result = [];
 
   stack.push(start);
 
@@ -402,11 +346,17 @@ function DFS(start, goal) {
 
       if (current === goal) {
         console.log(`DFS: Objetivo ${goal} encontrado`);
-        console.log("Recorrido:", result);
+
+        const endTime = performance.now();
+        const executionTime = endTime - startTime;
+
+        Writing(result, "result");
+        Writing(executionTime, "time");
+
         return result;
       }
 
-      
+
       let neighbors = edges
         .filter(edge => edge.start === current && !visited.has(edge.end))
         .map(edge => edge.end)
@@ -417,16 +367,22 @@ function DFS(start, goal) {
       }
     }
   }
+  const endTime = performance.now();
+  const executionTime = endTime - startTime;
 
-  console.log(`DFS: Objetivo ${goal} no encontrado`);
+  Writing(" ", "NAN");
+  Writing(executionTime, "time");
+
   return [];
 }
 
-function IDS(start, target) {
-  
+function IDS(start, target) { // Iterative deepening search (IDS)
+
+  const startTime = performance.now();
+
   function DLS(node, depth, visited) {
     if (depth === 0) return [];
-    if (node === target) return [node]; 
+    if (node === target) return [node];
 
     visited.add(node);
 
@@ -439,12 +395,12 @@ function IDS(start, target) {
       if (!visited.has(neighbor)) {
         let path = DLS(neighbor, depth - 1, visited);
         if (path.length > 0) {
-          return [node, ...path]; 
+          return [node, ...path];
         }
       }
     }
 
-    return []; 
+    return [];
   }
 
   // Bucle principal de IDS
@@ -453,41 +409,55 @@ function IDS(start, target) {
     let path = DLS(start, depth, visited);
 
     if (path.length > 0) {
-      console.log(`IDS: Objetivo ${target} encontrado en profundidad ${depth}`);
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+
+      Writing(path, "result");
+      Writing(executionTime, "time");
       return path;
     }
   }
 
-  console.log(`IDS: Objetivo ${target} no encontrado`);
+  const endTime = performance.now();
+  const executionTime = endTime - startTime;
+
+  Writing(" ", "NAN");
+  Writing(executionTime, "time");
+
   return [];
 }
 
-//__________________________________________________________________________________________________________________
+function BFS_H(start, goal) {// Heurístico Best first search
 
-function BFS_H(start, goal) {
- 
+  const startTime = performance.now();
+
   function heuristic(node, goal) {
-    return Math.abs(node - goal); 
+    return Math.abs(node - goal);
   }
 
-  let priorityQueue = []; 
+  let priorityQueue = [];
   let visited = new Set();
-  let result = []; 
+  let result = [];
 
 
   priorityQueue.push({ name: start, h: heuristic(start, goal) });
   visited.add(start);
 
   while (priorityQueue.length > 0) {
-    
-    priorityQueue.sort((a, b) => a.h - b.h); 
+
+    priorityQueue.sort((a, b) => a.h - b.h);
     let current = priorityQueue.shift();
 
     result.push(current.name);
 
     if (current.name === goal) {
       console.log(`Objetivo encontrado: ${goal}`);
-      console.log("Recorrido:", result);
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+
+      Writing(result, "result");
+      Writing(executionTime, "time");
+
       return result;
     }
 
@@ -500,17 +470,24 @@ function BFS_H(start, goal) {
     }
   }
 
+  const endTime = performance.now();
+  const executionTime = endTime - startTime;
+
+  Writing(" ", "NAN");
+  Writing(executionTime, "time");
   console.log(`Objetivo ${goal} no encontrado`);
   return [];
 }
 
-function IDA_SS(start, target) {
-  
+function IDA_SS(start, target) {// A star search (A*)
+
+  const startTime = performance.now();
+
   function heuristic(node) {
-    return Math.abs(node - target); 
+    return Math.abs(node - target);
   }
 
-  
+
   function DLS(node, g, fLimit, path) {
     let f = g + heuristic(node);
     if (f > fLimit) return f;
@@ -532,7 +509,7 @@ function IDA_SS(start, target) {
       }
     }
 
-    path.pop(); 
+    path.pop();
     return minLimit;
   }
 
@@ -544,11 +521,22 @@ function IDA_SS(start, target) {
 
     if (result === true) {
       console.log(`Objetivo encontrado: ${target}`);
-      console.log("Camino:", path);
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+
+      Writing(path, "result");
+      Writing(executionTime, "time");
+
       return path;
     }
 
     if (result === Infinity) {
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+
+      Writing(" ", "NAN");
+      Writing(executionTime, "time");
+
       console.log("No se encontró solución");
       return [];
     }
@@ -557,31 +545,39 @@ function IDA_SS(start, target) {
   }
 }
 
-function ASS(start, target) {
+function ASS(start, target) {// Iterative deepening A star search (IDA*)
+
+  const startTime = performance.now();
+
   function heuristic(node) {
-    return Math.abs(node - target); 
+    return Math.abs(node - target);
   }
 
-  let openList = []; 
+  let openList = [];
   let closedSet = new Set();
   let gValues = { [start]: 0 };
-  let cameFrom = {}; 
+  let cameFrom = {};
 
   openList.push({ name: start, f: heuristic(start) });
 
   while (openList.length > 0) {
-    
+
     openList.sort((a, b) => a.f - b.f);
     let current = openList.shift().name;
 
     if (current === target) {
-     
+
       let path = [];
       while (current != null) {
         path.unshift(current);
         current = cameFrom[current];
       }
-      console.log("A* Encontrado:", path);
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+
+      Writing(path, "result");
+      Writing(executionTime, "time");
+
       return path;
     }
 
@@ -601,48 +597,149 @@ function ASS(start, target) {
     }
   }
 
+  const endTime = performance.now();
+  const executionTime = endTime - startTime;
+
+  Writing(" ", "NAN");
+  Writing(executionTime, "time");
   console.log("A* no encontró el objetivo");
   return [];
 }
 
+function Writing(Messaje, type) {// Escritura
+
+  let x;
+  let y;
+
+  let text = "Recorrido: ";
+
+  if (type == "NAN") {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); drawNodes()
+    x = 100; y = 550;
+    text = "Destino no encontrado"
+  } else {
+
+    if (type == "result") {
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height); drawNodes()
+      x100; y = 550;
+
+      for (let index = 0; index < Messaje.length; index++) {
+        text += Messaje[index];
+        if (index != Messaje.length - 1) { text += " ->" }
+      }
+
+    } else if ("time") {
+      x = 100; y = 50;
+      text = "Tiempo: " + Messaje;
+    }
+  }
+
+  ctx.font = "17px Georgia";
+  ctx.fillStyle = "#000";
+  ctx.textAlign = "left";
+  ctx.fillText(text, x, y);
+
+}
+
+
+// Controladores de botones
+let listElements = document.querySelectorAll('.list__button--click');
+listElements.forEach(listElement => {
+  listElement.addEventListener('click', () => {
+
+    listElement.classList.toggle('arrow');
+
+    let height = 0;
+
+    let menu = listElement.nextElementSibling;
+    if (menu.clientHeight == "0") {
+      height = menu.scrollHeight;
+    }
+
+    menu.style.height = `${height}px`;
+  })
+});
+
+let elements = document.querySelectorAll('.Borrar, .Agregar, .AgregarArista, .EliminarArista, .BFS, .DFS, .IDS, .BFS_H, .IDA_SS, .ASS');
+elements.forEach(element => {
+  element.addEventListener('click', () => {
+
+    // Obtener los valores de los inputs de los nodos
+    const Start = parseInt(document.getElementById('nodeStart').value, 10);
+    const End = parseInt(document.getElementById('nodeObjet').value, 10);
+
+
+    const clickedClass = element.classList[2];
+
+    switch (clickedClass) {
+      //__________________________________________BOTONES DE NODOS______________________________________
+      case 'Borrar': deleteNode(); break;
+      case 'Agregar': alert('Doble clic en el panel para agregar nodo'); break;
+
+      //__________________________________________BOTONES DE ARISTAS______________________________________
+      case 'AgregarArista': addEdge(); break;
+      case 'EliminarArista': deleteEdge(); break;
+
+      //__________________________________________BOTONES DE OPERACIONES (ALGORTIMOS)______________________
+
+      case 'BFS': console.log(typeof Start); BFS(Start, End); break;
+      case 'DFS': DFS(Start, End); break;
+      case 'IDS': IDS(Start, End); break;
+      case 'BFS_H': BFS_H(Start, End); break;
+      case 'ASS': ASS(Start, End); break;
+      case 'IDA_SS': IDA_SS(Start, End); break;
+
+      default: break;
+    }
+  });
+});
 
 
 
+// GRAFO POR DEFECTO BORRAR SI ES NECESESARIO 
+{
+  addNode(500, 100);
+  addNode(400, 200);
+  addNode(600, 200);
+  addNode(300, 300);
+  addNode(450, 300);
+  addNode(550, 300);
+  addNode(700, 300);
 
+  addNode(150, 400);
+  addNode(250, 400);
+  addNode(350, 400);
+  addNode(450, 400);
 
-{addNode(500, 100);
-addNode(400, 200);
-addNode(600, 200);
-addNode(300, 300);
-addNode(450, 300);
-addNode(550, 300);
-addNode(700, 300);
+  addNode(550, 400);
+  addNode(650, 400);
+  addNode(750, 400);
+  addNode(850, 400);
+}
 
-addNode(150, 400);
-addNode(250, 400);
-addNode(350, 400);
-addNode(450, 400);
+{
+  edges.push({ start: 1, end: 2 })
+  edges.push({ start: 1, end: 3 })
+  edges.push({ start: 2, end: 4 })
+  edges.push({ start: 2, end: 5 })
+  edges.push({ start: 3, end: 6 })
+  edges.push({ start: 3, end: 7 })
 
-addNode(550, 400);
-addNode(650, 400);
-addNode(750, 400);
-addNode(850, 400);}
-
-{edges.push({ start: 1, end: 2})
-edges.push({ start: 1, end: 3})
-edges.push({ start: 2, end: 4})
-edges.push({ start: 2, end: 5})
-edges.push({ start: 3, end: 6})
-edges.push({ start: 3, end: 7})
-
-edges.push({ start: 4, end: 8})
-edges.push({ start: 4, end: 9})
-edges.push({ start: 5, end: 10})
-edges.push({ start: 5, end: 11})
-edges.push({ start: 6, end: 12})
-edges.push({ start: 6, end: 13})
-edges.push({ start: 7, end: 14})
-edges.push({ start: 7, end: 15})}
+  edges.push({ start: 4, end: 8 })
+  edges.push({ start: 4, end: 9 })
+  edges.push({ start: 5, end: 10 })
+  edges.push({ start: 5, end: 11 })
+  edges.push({ start: 6, end: 12 })
+  edges.push({ start: 6, end: 13 })
+  edges.push({ start: 7, end: 14 })
+  edges.push({ start: 7, end: 15 })
+}
 
 drawNodes()
+updateSelects()
+
+
+
+
 
