@@ -8,13 +8,7 @@ let nodeCounter = 1;//contador de nodos
 let lost = []; //arreglo para guardar nombres de nodos 
 let cEracer = 0; let cRename = 0; let save = 1;//contadores extras
 
-// Variable para rastrear si se está arrastrando
-let draggingNode = null;
-let offsetX, offsetY;
 
-// variables para cronometro
-let startTime;
-let endTime;
 
 // Contadores de nodo iniciale y final
 let nodosFinales = 0;
@@ -33,7 +27,7 @@ canvas.addEventListener('dblclick', function (event) {//1) tomar las cordenadas 
 });
 
 function addNode(x, y) {//2) agregar nodo
-  let node = { name: nodeCounter, x: x, y: y, color: '#ffcc00', type: "normal" };
+  let node = { name: nodeCounter, x: x, y: y };
 
   if (cEracer > 0 && cRename < cEracer) {//heredado de nombres
     node.name = lost[cRename];
@@ -69,38 +63,39 @@ function addNode(x, y) {//2) agregar nodo
   nodes.push(node);
 
   drawNode(node, node.color);
-  updateSelects();
+
 }
 
 function drawNodes() {//3) redibujar todos los nodos
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const node of nodes) {
-    drawNode(node, node.color);
+  for (let index = 0; index < nodes.length; index++) {
+
+    const x = nodes[index].x;
+    const y = nodes[index].y;
+
+    drawNode(x, y); // Nodo en Cartagena
   }
-  drawEdges();
+  drawEdges()
 }
 
-function drawNode(node, color) {//4) dibujar nodos
+function drawNode(x, y, color = 'blue', radio = 5) {//4) dibujar nodos
+  const punto = mapa.latLngToContainerPoint([x, y]);
   ctx.beginPath();
-  ctx.arc(node.x, node.y, 18, 0, 2 * Math.PI);
+  ctx.arc(punto.x, punto.y, radio, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
-
-  ctx.font = "12px Arial";
-  ctx.fillStyle = "#000";
-  ctx.textAlign = "center";
-  ctx.fillText("n" + node.name, node.x, node.y + 3);
+  ctx.closePath();
 }
 
-function deleteNode() {//5) borrar nodos y sus aristas
-  let deleteNode = parseInt(document.getElementById('editNode').value);
-  if (!deleteNode) { deleteNode = document.getElementById('editNode').value; }
+function deleteNode(deleteNode) {//5) borrar nodos y sus aristas
 
+  if (!deleteNode) { deleteNode = document.getElementById('editNode').value; }
 
   nodes = nodes.filter((node) => node.name !== deleteNode);
   edges = edges.filter((edge) => edge.start !== deleteNode && edge.end !== deleteNode);
   drawNodes();
-  updateSelects();
+
 
   let controlador = true;
 
@@ -127,159 +122,58 @@ function deleteNode() {//5) borrar nodos y sus aristas
   lost.sort(function (a, b) { return a - b; });
 }
 
-function addEdge() {//7) agregar aristas
-  const startNodeValue = document.getElementById('startNode').value
-  const endNodeValue = document.getElementById('endNode').value;
+function addEdge(nodeS, nodeE) {//7) agregar aristas
 
-
-
-  let startNodeIndex = parseInt(startNodeValue);
-  if (!startNodeIndex) { startNodeIndex = startNodeValue }
-
-  let endNodeIndex = parseInt(endNodeValue);
-  if (!endNodeIndex) { endNodeIndex = endNodeValue }
-
-  const edge = { start: startNodeIndex, end: endNodeIndex, color: '#000000' }
+  const edge = { start: nodeS, end: nodeE }
 
   edges.push(edge);
 
-
-  let startNode = nodes.find(node => node.name === startNodeIndex);
-  let endNode = nodes.find(node => node.name === endNodeIndex);
-
-
-
-
-  drawEdge(startNode.x, startNode.y, endNode.x, endNode.y, edge.color);
-  updateSelects();
+  drawEdge(edge.start, edge.end);
 
 }
 
-function drawEdge(startX, startY, endX, endY, color) {//8)dibujar aristas 
-  const startRadius = 18;
-  const endRadius = 18;
+function drawEdge(nodeS, nodeE, color = '#888483') {//8)dibujar aristas 
 
-  // Calcular de las medidas de la arista
-  const dx = endX - startX;
-  const dy = endY - startY;
-  const length = Math.sqrt(dx * dx + dy * dy);
+  const nodeStart = nodes.find(node => node.name === nodeS);
+  const nodeEnd = nodes.find(node => node.name === nodeE);
 
-  const startArrowX = startX + (dx * startRadius) / length;
-  const startArrowY = startY + (dy * startRadius) / length;
-  const endArrowX = endX - (dx * endRadius) / length;
-  const endArrowY = endY - (dy * endRadius) / length;
-
-  // Dibujar la línea
+  const punto1 = mapa.latLngToContainerPoint([nodeStart.x, nodeStart.y]);
+  const punto2 = mapa.latLngToContainerPoint([nodeEnd.x, nodeEnd.y]);
   ctx.beginPath();
-  ctx.moveTo(startArrowX, startArrowY);
-  ctx.lineTo(endArrowX, endArrowY);
+  ctx.moveTo(punto1.x, punto1.y);
+  ctx.lineTo(punto2.x, punto2.y);
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
   ctx.stroke();
+  ctx.closePath();
 
 }
 
 function drawEdges() {//9) redibujara aristas
-  for (const edge of edges) {
-    const startNode = nodes.find(node => node.name === edge.start);
-    const endNode = nodes.find(node => node.name === edge.end);
-    drawEdge(startNode.x, startNode.y, endNode.x, endNode.y, edge.value, edge.color);
+  for (let index = 0; index < edges.length; index++) {
+
+    const edge = edges[index];
+    drawEdge(edge.start, edge.end);
   }
 }
 
-function deleteEdge() {//10) borrar una arista en especifico
-  const deleteEdgeIndex = parseInt(document.getElementById('editEdge').value);
+function deleteEdge(EdgeStart, EdgeEnd) {
 
-  edges.splice(deleteEdgeIndex, 1);
+  const deleteEdgeIndex = edges.findIndex(edge => edge.start === EdgeStart && edge.end === EdgeEnd);
 
+
+  if (deleteEdgeIndex !== -1) {
+    edges.splice(deleteEdgeIndex, 1);
+    console.log(`Arista eliminada: Inicio = ${EdgeStart}, Fin = ${EdgeEnd}`);
+  } else {
+    console.log(`No se encontró la arista con Inicio = ${EdgeStart} y Fin = ${EdgeEnd}`);
+  }
 
   drawNodes();
-  updateSelects();
 }
 
-function updateSelects() {//12) actualizacion de los datos de los select
-  save = 0;
-  // select de nodos
-  const startNodeSelect = document.getElementById('startNode');
-  const endNodeSelect = document.getElementById('endNode');
-  const editNodeSelect = document.getElementById('editNode');
-  // select de aristas
-  const editEdgeSelect = document.getElementById('editEdge');
-
-  editNodeSelect.innerHTML = '';
-  startNodeSelect.innerHTML = '';
-  endNodeSelect.innerHTML = '';
-  editEdgeSelect.innerHTML = '';
-
-  // Agregar nodos al select
 
 
-  for (const node of nodes) {
-    const option = document.createElement('option');
-    option.value = node.name;
-    option.text = `Nodo ${node.name}`;
-    startNodeSelect.add(option);
-
-    const option2 = document.createElement('option');
-    option2.value = node.name;
-    option2.text = `Nodo ${node.name}`;
-    endNodeSelect.add(option2);
-
-    const option3 = document.createElement('option');
-    option3.value = node.name;
-    option3.text = `Nodo ${node.name}`;
-    editNodeSelect.add(option3);
-  }
-
-  // Agregar aristas al select
-  for (const edge of edges) {
-    const option = document.createElement('option');
-    option.value = edges.indexOf(edge);
-    option.text = `Arista ${edge.start} - ${edge.end}`;
-    editEdgeSelect.add(option);
-  }
-}
-
-function startDraggingNode(node, x, y) {//Ajusta el nodo que se está arrastrando y calcula las diferencias de posición
-  draggingNode = node;
-  offsetX = x - node.x;
-  offsetY = y - node.y;
-}
-
-function stopDraggingNode() {//Detiene el arrastre de un nodo
-  draggingNode = null;
-}
-
-canvas.addEventListener('mousedown', function (event) {//evento que Inicia el arrastre de un nodo
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = event.clientX - rect.left;
-  const mouseY = event.clientY - rect.top;
-
-  for (const node of nodes) {
-    const distance = Math.sqrt((mouseX - node.x) ** 2 + (mouseY - node.y) ** 2);
-    if (distance <= 18) {
-      startDraggingNode(node, mouseX, mouseY);
-      break;
-    }
-  }
-});
-
-canvas.addEventListener('mousemove', function (event) {//evento que escucha el arrastre y va Actualiza la posicion del nodo
-  if (draggingNode) {
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-
-    draggingNode.x = mouseX - offsetX;
-    draggingNode.y = mouseY - offsetY;
-
-    drawNodes();
-  }
-});
-
-canvas.addEventListener('mouseup', function () {//evento que escucha donde se finaliza el arrastre
-  stopDraggingNode();
-});
 
 // Algoritmos __________________________________________________________________________________________________________________
 
@@ -658,6 +552,7 @@ listElements.forEach(listElement => {
   })
 });
 
+let operaciones = " ";
 let elements = document.querySelectorAll('.Borrar, .Agregar, .AgregarArista, .EliminarArista, .BFS, .DFS, .IDS, .BFS_H, .IDA_SS, .ASS');
 elements.forEach(element => {
   element.addEventListener('click', () => {
@@ -671,12 +566,12 @@ elements.forEach(element => {
 
     switch (clickedClass) {
       //__________________________________________BOTONES DE NODOS______________________________________
-      case 'Borrar': deleteNode(); break;
-      case 'Agregar': alert('Doble clic en el panel para agregar nodo'); break;
+      case 'Borrar': alert('Selecione nodo'); operaciones = 'Borrar_Nodo'; break;
+      case 'Agregar': alert('Clic en el mapa para agregar nodo'); break;
 
       //__________________________________________BOTONES DE ARISTAS______________________________________
-      case 'AgregarArista': addEdge(); break;
-      case 'EliminarArista': deleteEdge(); break;
+      case 'AgregarArista': alert('Selecione los nodos'); operaciones = 'Agregar_Arista'; break;
+      case 'EliminarArista': alert('Selecione los nodos'); operaciones = 'Borrar_Arista'; break;
 
       //__________________________________________BOTONES DE OPERACIONES (ALGORTIMOS)______________________
 
@@ -693,50 +588,103 @@ elements.forEach(element => {
 });
 
 
-
-// GRAFO POR DEFECTO BORRAR SI ES NECESESARIO 
-{
-  addNode(500, 100);
-  addNode(400, 200);
-  addNode(600, 200);
-  addNode(300, 300);
-  addNode(450, 300);
-  addNode(550, 300);
-  addNode(700, 300);
-
-  addNode(150, 400);
-  addNode(250, 400);
-  addNode(350, 400);
-  addNode(450, 400);
-
-  addNode(550, 400);
-  addNode(650, 400);
-  addNode(750, 400);
-  addNode(850, 400);
-}
-
-{
-  edges.push({ start: 1, end: 2 })
-  edges.push({ start: 1, end: 3 })
-  edges.push({ start: 2, end: 4 })
-  edges.push({ start: 2, end: 5 })
-  edges.push({ start: 3, end: 6 })
-  edges.push({ start: 3, end: 7 })
-
-  edges.push({ start: 4, end: 8 })
-  edges.push({ start: 4, end: 9 })
-  edges.push({ start: 5, end: 10 })
-  edges.push({ start: 5, end: 11 })
-  edges.push({ start: 6, end: 12 })
-  edges.push({ start: 6, end: 13 })
-  edges.push({ start: 7, end: 14 })
-  edges.push({ start: 7, end: 15 })
-}
-
-drawNodes()
-updateSelects()
+// Configurar el mapa de Leaflet
+const mapa = L.map('mapa').setView([10.4236, -75.5478], 14); // Coordenadas iniciales
 
 
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: 'Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+}).addTo(mapa);
+
+
+let EdgeStart;
+let EdgeStartV = false;
+
+mapa.on('click', function (e) {
+  const { lat, lng } = e.latlng;
+
+  const threshold = 0.00009;
+
+  // Verificar si el nodo está cerca de un nodo existente
+  const nearbyNode = nodes.find(node => {
+    const distance = Math.sqrt(Math.pow(node.x - lat, 2) + Math.pow(node.y - lng, 2));
+    return distance < threshold;
+  });
+
+
+  if (nearbyNode || operaciones != " ") {
+
+    console.log(operaciones)
+
+    switch (operaciones) {
+      case 'Borrar_Nodo': deleteNode(nearbyNode.name); operaciones = " "; break;
+
+      case 'Agregar_Arista':
+        if (EdgeStartV) {
+
+          const EdgeEnd = nearbyNode.name;
+          addEdge(EdgeStart, EdgeEnd);
+
+          EdgeStartV = false;
+          operaciones = " "
+
+        } else {
+
+          console.log("Nodo selecionado: " + nearbyNode.name);
+
+          EdgeStart = nearbyNode.name;
+          EdgeStartV = true;
+
+        }; break;
+
+      case 'Borrar_Arista':
+        if (EdgeStartV) {
+
+          const EdgeEnd = nearbyNode.name;
+          deleteEdge(EdgeStart, EdgeEnd);
+
+          EdgeStartV = false;
+          operaciones = " "
+
+        } else {
+
+          console.log("Nodo selecionado: " + nearbyNode.name);
+
+          EdgeStart = nearbyNode.name;
+          EdgeStartV = true;
+
+        } break;
+
+      default:
+        if (operaciones == " ") { alert('No se seleciono ningun accion'); }
+        else { alert('No se seleciono ningun elemento'); } break;
+    }
+
+    return;
+  }
 
 
 
+
+
+
+  const point = { name: nodeCounter, x: lat, y: lng };
+
+  nodeCounter++;
+  nodes.push(point);
+  drawNodes();
+
+  console.log(`Nodo agregado: ${JSON.stringify(point)}`);
+});
+
+mapa.on('load', () => {
+
+});
+
+mapa.on('moveend', () => {
+  drawNodes();
+});
+
+/*
+
+   */

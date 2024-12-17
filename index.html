@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor de Grafos</title>
     <link rel="icon" href="img/Icono.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 
 <body>
     <h1 class="centered-heading">Grafos</h1>
@@ -24,12 +27,6 @@
                         <img src="img/flecha.svg" class="list__arrow">
                     </div>
                     <ul class="list_show">
-                        <li class="list__insides">
-                            <a href="#" class="nav__link nav__link--inside2">
-                                <label for="editNode">Seleccionar Nodo:</label>
-                                <select id="editNode"></select>
-                            </a>
-                        </li>
                         <li class="list__inside">
                             <a href="#" class="nav__link nav__link--inside Borrar">Borrar</a>
                         </li>
@@ -49,21 +46,7 @@
                     </div>
                     <ul class="list_show">
                         <li class="list__inside">
-                            <a href="#" class="nav__link nav__link--inside2">
-                                <label for="startNode">Nodo Inicial:</label>
-                                <select id="startNode"></select><br>
-                                <label for="endNode">Nodo Final:</label>
-                                <select id="endNode"></select><br><br>
-                            </a>
-                        </li>
-                        <li class="list__inside">
                             <a href="#" class="nav__link nav__link--inside AgregarArista">Agregar</a>
-                        </li>
-                        <li class="list__inside">
-                            <a href="#" class="nav__link nav__link--inside2">
-                                <label for="changeEdge">Seleccionar Arista:</label>
-                                <select id="editEdge"></select><br><br>
-                            </a>
                         </li>
                         <li class="list__inside">
                             <a href="#" class="nav__link nav__link--inside EliminarArista">Eliminar</a>
@@ -112,7 +95,13 @@
             </ul>
         </nav>
 
-        <canvas id="canvas" width="1000" height="600"></canvas>
+        <div id="map-container">
+            <div id="mapa" style="width: 1000px; height: 600px;"></div>
+            <canvas id="canvas" width="1055" height="600"></canvas>
+        </div>
+
+          
+        
 
     </div>
 
