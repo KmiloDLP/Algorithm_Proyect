@@ -130,7 +130,7 @@ function deleteNode() {//5) borrar nodos y sus aristas
 function addEdge() {//7) agregar aristas
   const startNodeValue = document.getElementById('startNode').value
   const endNodeValue = document.getElementById('endNode').value;
-  const edgeValue = parseInt(document.getElementById('edgeValue').value);
+
 
 
   let startNodeIndex = parseInt(startNodeValue);
@@ -139,7 +139,7 @@ function addEdge() {//7) agregar aristas
   let endNodeIndex = parseInt(endNodeValue);
   if (!endNodeIndex) { endNodeIndex = endNodeValue }
 
-  const edge = { start: startNodeIndex, end: endNodeIndex, value: edgeValue, color: '#000000' }
+  const edge = { start: startNodeIndex, end: endNodeIndex, color: '#000000' }
 
   edges.push(edge);
 
@@ -150,9 +150,8 @@ function addEdge() {//7) agregar aristas
 
 
 
-  drawEdge(startNode.x, startNode.y, endNode.x, endNode.y, edgeValue, edge.color);
+  drawEdge(startNode.x, startNode.y, endNode.x, endNode.y, edge.color);
   updateSelects();
-  console.log(edges);
 
 }
 
@@ -300,7 +299,6 @@ function BFS(start, goal) { // Breadth first search (BFS)
     resultado.push(actual);
 
     if (actual === goal) {
-      console.log(`BFS: Objetivo ${goal} encontrado`);
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -317,7 +315,7 @@ function BFS(start, goal) { // Breadth first search (BFS)
     }
   }
 
-  console.log(`BFS: Objetivo ${goal} no encontrado`);
+
   const endTime = performance.now();
   const executionTime = endTime - startTime;
 
@@ -345,7 +343,7 @@ function DFS(start, goal) { // Depth first search (DFS)
 
 
       if (current === goal) {
-        console.log(`DFS: Objetivo ${goal} encontrado`);
+
 
         const endTime = performance.now();
         const executionTime = endTime - startTime;
@@ -451,7 +449,7 @@ function BFS_H(start, goal) {// Heurístico Best first search
     result.push(current.name);
 
     if (current.name === goal) {
-      console.log(`Objetivo encontrado: ${goal}`);
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -475,7 +473,6 @@ function BFS_H(start, goal) {// Heurístico Best first search
 
   Writing(" ", "NAN");
   Writing(executionTime, "time");
-  console.log(`Objetivo ${goal} no encontrado`);
   return [];
 }
 
@@ -520,7 +517,7 @@ function IDA_SS(start, target) {// A star search (A*)
     let result = DLS(start, 0, fLimit, path);
 
     if (result === true) {
-      console.log(`Objetivo encontrado: ${target}`);
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -537,7 +534,7 @@ function IDA_SS(start, target) {// A star search (A*)
       Writing(" ", "NAN");
       Writing(executionTime, "time");
 
-      console.log("No se encontró solución");
+
       return [];
     }
 
@@ -602,7 +599,7 @@ function ASS(start, target) {// Iterative deepening A star search (IDA*)
 
   Writing(" ", "NAN");
   Writing(executionTime, "time");
-  console.log("A* no encontró el objetivo");
+
   return [];
 }
 
@@ -683,7 +680,7 @@ elements.forEach(element => {
 
       //__________________________________________BOTONES DE OPERACIONES (ALGORTIMOS)______________________
 
-      case 'BFS': console.log(typeof Start); BFS(Start, End); break;
+      case 'BFS': BFS(Start, End); break;
       case 'DFS': DFS(Start, End); break;
       case 'IDS': IDS(Start, End); break;
       case 'BFS_H': BFS_H(Start, End); break;
