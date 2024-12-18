@@ -6,7 +6,7 @@ let edges = [];//arreglo de aristas
 let nodeCounter = 1;//contador de nodos
 
 let lost = []; //arreglo para guardar nombres de nodos 
-let cEracer = 0; let cRename = 0; let save = 1;//contadores extras
+let cEracer = 0; let cRename = 0; //contadores extras
 
 
 
@@ -171,6 +171,55 @@ function deleteEdge(EdgeStart, EdgeEnd) {
 
   drawNodes();
 }
+
+function saveProject() {//14)  Guardar el proyecto
+  const data = JSON.stringify({ nodes: nodes, edges: edges });
+  const blob = new Blob([data], { type: 'application/json' });
+  const jsonUrl = URL.createObjectURL(blob);
+
+  // Guardar el archivo JSON
+  const jsonLink = document.createElement('a');
+  jsonLink.href = jsonUrl;
+  jsonLink.download = 'Grafo.json';
+  jsonLink.click();
+  URL.revokeObjectURL(jsonUrl);
+
+  save = 1;
+}
+
+function openProject() {
+  nodosFinales = 0;
+  nodosIniciale = 0;
+
+  const filePath = '/Cache/Cache.json'; // Ruta fija al archivo JSON
+
+  fetch(filePath)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Error al cargar el archivo: ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      nodes = data.nodes;
+      edges = data.edges;
+
+      let max = 0;
+      for (const node of nodes) {
+        if (node.name > max) {
+          max = node.name;
+        }
+      }
+      nodeCounter = max + 1;
+
+      drawNodes();
+      updateSelects();
+    })
+    .catch((error) => {
+      console.error("Error al cargar el archivo:", error);
+    });
+}
+
 
 
 
@@ -553,7 +602,7 @@ listElements.forEach(listElement => {
 });
 
 let operaciones = " ";
-let elements = document.querySelectorAll('.Borrar, .Agregar, .AgregarArista, .EliminarArista, .BFS, .DFS, .IDS, .BFS_H, .IDA_SS, .ASS');
+let elements = document.querySelectorAll('.Save, .Borrar, .Agregar, .AgregarArista, .EliminarArista, .BFS, .DFS, .IDS, .BFS_H, .IDA_SS, .ASS');
 elements.forEach(element => {
   element.addEventListener('click', () => {
 
@@ -568,6 +617,7 @@ elements.forEach(element => {
       //__________________________________________BOTONES DE NODOS______________________________________
       case 'Borrar': alert('Selecione nodo'); operaciones = 'Borrar_Nodo'; break;
       case 'Agregar': alert('Clic en el mapa para agregar nodo'); break;
+      case 'Save': saveProject(); break;
 
       //__________________________________________BOTONES DE ARISTAS______________________________________
       case 'AgregarArista': alert('Selecione los nodos'); operaciones = 'Agregar_Arista'; break;
@@ -685,6 +735,4 @@ mapa.on('moveend', () => {
   drawNodes();
 });
 
-/*
-
-   */
+nodes.push(...Save)
