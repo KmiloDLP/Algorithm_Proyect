@@ -19,12 +19,6 @@ let counter;
 
 const graph = {};//representar la estructura del grafo
 
-canvas.addEventListener('dblclick', function (event) {//1) tomar las cordenadas x y y para los nodos
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  addNode(x, y);//
-});
 
 function addNode(x, y) {//2) agregar nodo
   let node = { name: nodeCounter, x: x, y: y };
@@ -62,30 +56,38 @@ function addNode(x, y) {//2) agregar nodo
 
   nodes.push(node);
 
-  drawNode(node, node.color);
+  drawNode(node);
 
 }
 
 function drawNodes() {//3) redibujar todos los nodos
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawEdges()
   for (let index = 0; index < nodes.length; index++) {
 
-    const x = nodes[index].x;
-    const y = nodes[index].y;
 
-    drawNode(x, y); // Nodo en Cartagena
+    drawNode(nodes[index]); // Nodo en Cartagena
   }
-  drawEdges()
+  
 }
 
-function drawNode(x, y, color = 'blue', radio = 5) {//4) dibujar nodos
-  const punto = mapa.latLngToContainerPoint([x, y]);
+function drawNode(node, color = 'blue', radio = 7) {
+  // Convertir las coordenadas geográficas a píxeles en el canvas
+  const punto = mapa.latLngToContainerPoint([node.x, node.y]);
+
+  // Dibujar el nodo como un círculo
   ctx.beginPath();
   ctx.arc(punto.x, punto.y, radio, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
   ctx.closePath();
+
+  // Dibujar el texto del nombre del nodo
+  ctx.font = "9px Arial";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText(node.name, punto.x, punto.y + 3); // Usar las coordenadas del punto convertido
 }
 
 function deleteNode(deleteNode) {//5) borrar nodos y sus aristas
@@ -187,20 +189,25 @@ function saveProject() {//14)  Guardar el proyecto
   save = 1;
 }
 
-function openProject() {
+function openProject() {//16) abrir proyecto desde archivo JSON
+  const input = document.createElement('input');
+
+  console.log(input);
+
   nodosFinales = 0;
   nodosIniciale = 0;
 
-  const filePath = '/Cache/Cache.json'; // Ruta fija al archivo JSON
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.click();
 
-  fetch(filePath)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Error al cargar el archivo: ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then((data) => {
+  input.onchange = function (event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.readAsText(file);
+
+    reader.onload = function (event) {
+      const data = JSON.parse(event.target.result);
       nodes = data.nodes;
       edges = data.edges;
 
@@ -211,14 +218,14 @@ function openProject() {
         }
       }
       nodeCounter = max + 1;
-
       drawNodes();
-      updateSelects();
-    })
-    .catch((error) => {
-      console.error("Error al cargar el archivo:", error);
-    });
+    };
+
+  };
+
 }
+
+
 
 
 
@@ -226,22 +233,31 @@ function openProject() {
 
 // Algoritmos __________________________________________________________________________________________________________________
 
-function BFS(start, goal) { // Breadth first search (BFS)
-
+function BFS(start, goal) {
   const startTime = performance.now();
+
 
   let cola = [];
   let visitados = new Set();
   let resultado = [];
+  let cameFrom = {};  // Mapa para guardar el nodo desde el cual llegamos a otro
 
   cola.push(start);
   visitados.add(start);
 
   while (cola.length > 0) {
+
     let actual = cola.shift();
-    resultado.push(actual);
 
     if (actual === goal) {
+      // Reconstruir el camino desde `goal` hacia `start`
+      let current = goal;
+      while (current !== start) {
+        resultado.unshift(current);
+        current = cameFrom[current];
+      }
+      resultado.unshift(start); // Agregar el nodo de inicio
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -250,14 +266,22 @@ function BFS(start, goal) { // Breadth first search (BFS)
       return resultado;
     }
 
+    // Considerar aristas en ambas direcciones (start -> end y end -> start)
+
     for (let edge of edges) {
-      if (edge.start === actual && !visitados.has(edge.end)) {
-        cola.push(edge.end);
-        visitados.add(edge.end);
+
+      if ((edge.start === actual || edge.end === actual)) {
+        
+        let neighbor = (edge.start === actual) ? edge.end : edge.start;
+        
+        if (!visitados.has(neighbor)) {
+          visitados.add(neighbor);
+          cameFrom[neighbor] = actual;  // Guardar de qué nodo venimos
+          cola.push(neighbor);
+        }
       }
     }
   }
-
 
   const endTime = performance.now();
   const executionTime = endTime - startTime;
@@ -267,8 +291,7 @@ function BFS(start, goal) { // Breadth first search (BFS)
   return [];
 }
 
-function DFS(start, goal) { // Depth first search (DFS)
-
+function DFS(start, goal) {
   const startTime = performance.now();
 
   let visited = new Set();
@@ -284,10 +307,7 @@ function DFS(start, goal) { // Depth first search (DFS)
       visited.add(current);
       result.push(current);
 
-
       if (current === goal) {
-
-
         const endTime = performance.now();
         const executionTime = endTime - startTime;
 
@@ -297,10 +317,10 @@ function DFS(start, goal) { // Depth first search (DFS)
         return result;
       }
 
-
+      // Considerar aristas en ambas direcciones (start -> end y end -> start)
       let neighbors = edges
-        .filter(edge => edge.start === current && !visited.has(edge.end))
-        .map(edge => edge.end)
+        .filter(edge => (edge.start === current || edge.end === current))
+        .map(edge => (edge.start === current) ? edge.end : edge.start)
         .sort((a, b) => b - a);
 
       for (let neighbor of neighbors) {
@@ -308,6 +328,7 @@ function DFS(start, goal) { // Depth first search (DFS)
       }
     }
   }
+
   const endTime = performance.now();
   const executionTime = endTime - startTime;
 
@@ -317,8 +338,7 @@ function DFS(start, goal) { // Depth first search (DFS)
   return [];
 }
 
-function IDS(start, target) { // Iterative deepening search (IDS)
-
+function IDS(start, target) {
   const startTime = performance.now();
 
   function DLS(node, depth, visited) {
@@ -327,10 +347,9 @@ function IDS(start, target) { // Iterative deepening search (IDS)
 
     visited.add(node);
 
-
     let neighbors = edges
-      .filter(edge => edge.start === node)
-      .map(edge => edge.end);
+      .filter(edge => (edge.start === node || edge.end === node))
+      .map(edge => (edge.start === node) ? edge.end : edge.start);
 
     for (let neighbor of neighbors) {
       if (!visited.has(neighbor)) {
@@ -368,8 +387,8 @@ function IDS(start, target) { // Iterative deepening search (IDS)
   return [];
 }
 
-function BFS_H(start, goal) {// Heurístico Best first search
 
+function BFS_H(start, goal) {
   const startTime = performance.now();
 
   function heuristic(node, goal) {
@@ -380,19 +399,16 @@ function BFS_H(start, goal) {// Heurístico Best first search
   let visited = new Set();
   let result = [];
 
-
   priorityQueue.push({ name: start, h: heuristic(start, goal) });
   visited.add(start);
 
   while (priorityQueue.length > 0) {
-
     priorityQueue.sort((a, b) => a.h - b.h);
     let current = priorityQueue.shift();
 
     result.push(current.name);
 
     if (current.name === goal) {
-
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -402,11 +418,14 @@ function BFS_H(start, goal) {// Heurístico Best first search
       return result;
     }
 
-
+    // Considerar aristas en ambas direcciones (start -> end y end -> start)
     for (let edge of edges) {
-      if (edge.start === current.name && !visited.has(edge.end)) {
-        visited.add(edge.end);
-        priorityQueue.push({ name: edge.end, h: heuristic(edge.end, goal) });
+      let neighbor = (edge.start === current.name) ? edge.end : edge.start;
+      
+      // Asegurarse de no volver a visitar un nodo
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
+        priorityQueue.push({ name: neighbor, h: heuristic(neighbor, goal) });
       }
     }
   }
@@ -419,48 +438,55 @@ function BFS_H(start, goal) {// Heurístico Best first search
   return [];
 }
 
-function IDA_SS(start, target) {// A star search (A*)
-
+function IDA_SS(start, target) {
   const startTime = performance.now();
 
+  // Heurística para estimar la distancia
   function heuristic(node) {
     return Math.abs(node - target);
   }
 
+  // Búsqueda de profundidad limitada (DLS)
+  function DLS(node, g, fLimit, path, visited) {
+    let f = g + heuristic(node); // Calcular la función de evaluación
+    if (f > fLimit) return f; // Si el valor de f excede el límite, detener
 
-  function DLS(node, g, fLimit, path) {
-    let f = g + heuristic(node);
-    if (f > fLimit) return f;
-
-    if (node === target) {
+    if (node === target) { // Si alcanzamos el objetivo, devolver el camino
       path.push(node);
       return true;
     }
 
     let minLimit = Infinity;
-    path.push(node);
+    path.push(node); // Agregar el nodo actual al camino
+    visited.add(node); // Marcar el nodo como visitado
 
+    // Recorrer todas las aristas del nodo actual
     for (let edge of edges) {
-      if (edge.start === node && !path.includes(edge.end)) {
-        let result = DLS(edge.end, g + edge.cost, fLimit, path);
-
+      // Considerar ambas direcciones de las aristas (bidireccionales)
+      if (edge.start === node && !visited.has(edge.end)) {
+        let result = DLS(edge.end, g + edge.cost, fLimit, path, visited);
+        if (result === true) return true; // Si encontramos el objetivo, retornar el camino
+        if (typeof result === "number") minLimit = Math.min(minLimit, result);
+      } else if (edge.end === node && !visited.has(edge.start)) {
+        let result = DLS(edge.start, g + edge.cost, fLimit, path, visited);
         if (result === true) return true;
         if (typeof result === "number") minLimit = Math.min(minLimit, result);
       }
     }
 
-    path.pop();
-    return minLimit;
+    path.pop(); // Eliminar el nodo actual del camino
+    visited.delete(node); // Desmarcar el nodo como visitado
+    return minLimit; // Devolver el límite mínimo encontrado
   }
 
-  let fLimit = heuristic(start);
-  let path = [];
+  let fLimit = heuristic(start); // Establecer el límite inicial basado en la heurística
+  let path = []; // Lista para almacenar el camino
+  let visited = new Set(); // Conjunto de nodos visitados
 
   while (true) {
-    let result = DLS(start, 0, fLimit, path);
+    let result = DLS(start, 0, fLimit, path, visited); // Llamar a DLS
 
-    if (result === true) {
-
+    if (result === true) { // Si encontramos el objetivo, devolver el camino
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -470,23 +496,22 @@ function IDA_SS(start, target) {// A star search (A*)
       return path;
     }
 
-    if (result === Infinity) {
+    if (result === Infinity) { // Si no se encontró solución, devolver vacío
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
       Writing(" ", "NAN");
       Writing(executionTime, "time");
 
-
       return [];
     }
 
-    fLimit = result; // Actualizar el límite
+    fLimit = result; // Actualizar el límite para la siguiente iteración
   }
 }
 
-function ASS(start, target) {// Iterative deepening A star search (IDA*)
 
+function ASS(start, target) {
   const startTime = performance.now();
 
   function heuristic(node) {
@@ -502,11 +527,14 @@ function ASS(start, target) {// Iterative deepening A star search (IDA*)
 
   while (openList.length > 0) {
 
+  
+
     openList.sort((a, b) => a.f - b.f);
     let current = openList.shift().name;
 
     if (current === target) {
 
+      
       let path = [];
       while (current != null) {
         path.unshift(current);
@@ -523,15 +551,27 @@ function ASS(start, target) {// Iterative deepening A star search (IDA*)
 
     closedSet.add(current);
 
-    for (let edge of edges) {
-      if (edge.start === current && !closedSet.has(edge.end)) {
-        let tentativeG = gValues[current] + edge.cost;
 
-        if (!(edge.end in gValues) || tentativeG < gValues[edge.end]) {
-          gValues[edge.end] = tentativeG;
-          let fValue = tentativeG + heuristic(edge.end);
-          openList.push({ name: edge.end, f: fValue });
-          cameFrom[edge.end] = current;
+    for (let edge of edges) {
+      
+      if ((edge.start === current || edge.end === current)) {
+        let neighbor = (edge.start === current) ? edge.end : edge.start;
+        console.log('if2');
+
+        if (!closedSet.has(neighbor)) {
+
+      
+          let tentativeG = gValues[current] + edge.cost;
+
+          if (!(neighbor in gValues) || tentativeG < gValues[neighbor]) {
+
+    
+
+            gValues[neighbor] = tentativeG;
+            let fValue = tentativeG + heuristic(neighbor);
+            openList.push({ name: neighbor, f: fValue });
+            cameFrom[neighbor] = current;
+          }
         }
       }
     }
@@ -545,6 +585,7 @@ function ASS(start, target) {// Iterative deepening A star search (IDA*)
 
   return [];
 }
+
 
 function Writing(Messaje, type) {// Escritura
 
@@ -562,7 +603,7 @@ function Writing(Messaje, type) {// Escritura
     if (type == "result") {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height); drawNodes()
-      x100; y = 550;
+      x=100; y = 550;
 
       for (let index = 0; index < Messaje.length; index++) {
         text += Messaje[index];
@@ -602,7 +643,7 @@ listElements.forEach(listElement => {
 });
 
 let operaciones = " ";
-let elements = document.querySelectorAll('.Save, .Borrar, .Agregar, .AgregarArista, .EliminarArista, .BFS, .DFS, .IDS, .BFS_H, .IDA_SS, .ASS');
+let elements = document.querySelectorAll('.Open, .Save, .Borrar, .Agregar, .AgregarArista, .EliminarArista, .BFS, .DFS, .IDS, .BFS_H, .IDA_SS, .ASS');
 elements.forEach(element => {
   element.addEventListener('click', () => {
 
@@ -618,9 +659,11 @@ elements.forEach(element => {
       case 'Borrar': alert('Selecione nodo'); operaciones = 'Borrar_Nodo'; break;
       case 'Agregar': alert('Clic en el mapa para agregar nodo'); break;
       case 'Save': saveProject(); break;
+      case 'Open': openProject(); break;
+
 
       //__________________________________________BOTONES DE ARISTAS______________________________________
-      case 'AgregarArista': alert('Selecione los nodos'); operaciones = 'Agregar_Arista'; break;
+      case 'AgregarArista':/* alert('Selecione los nodos');*/ operaciones = 'Agregar_Arista'; break;
       case 'EliminarArista': alert('Selecione los nodos'); operaciones = 'Borrar_Arista'; break;
 
       //__________________________________________BOTONES DE OPERACIONES (ALGORTIMOS)______________________
@@ -735,4 +778,11 @@ mapa.on('moveend', () => {
   drawNodes();
 });
 
-nodes.push(...Save)
+function load(){
+  let Save=[{"name":1,"x":10.424092104596953,"y":-75.55214971303941},{"name":2,"x":10.4241765186795,"y":-75.55116266012193},{"name":3,"x":10.425020658246583,"y":-75.55122703313828},{"name":4,"x":10.424967899590666,"y":-75.55210679769517}]
+  nodes.push(...Save)
+  let lastElement = nodes.slice(-1)[0];
+  nodeCounter=lastElement.name+1;
+}
+
+//load();
