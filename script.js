@@ -681,7 +681,7 @@ elements.forEach(element => {
 });
 
 
-// Configurar el mapa de Leaflet
+
 const mapa = L.map('mapa').setView([10.4236, -75.5478], 14); // Coordenadas iniciales
 
 
@@ -778,11 +778,3 @@ mapa.on('moveend', () => {
   drawNodes();
 });
 
-function load(){
-  let Save=[{"name":1,"x":10.424092104596953,"y":-75.55214971303941},{"name":2,"x":10.4241765186795,"y":-75.55116266012193},{"name":3,"x":10.425020658246583,"y":-75.55122703313828},{"name":4,"x":10.424967899590666,"y":-75.55210679769517}]
-  nodes.push(...Save)
-  let lastElement = nodes.slice(-1)[0];
-  nodeCounter=lastElement.name+1;
-}
-
-//load();
